@@ -1,18 +1,77 @@
 'use client'
 
-import { useState } from 'react'
-import { Sparkles, Loader2, FileText, Download, Search as SearchIcon, MessageSquare, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Sparkles, Loader2, FileText, Download, Search as SearchIcon, MessageSquare, ArrowRight, History, X } from 'lucide-react'
 import { AgentProgress, type AgentStep } from '@/components/workflows/AgentProgress'
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer'
+import WorkflowHistory from '@/components/workflows/WorkflowHistory'
+import ChatInterface from '@/components/chat/ChatInterface'
 import Link from 'next/link'
 
 export default function WorkflowsPage() {
+  const searchParams = useSearchParams()
+  const workflowId = searchParams.get('id')
+  
   const [query, setQuery] = useState('')
   const [workflowType, setWorkflowType] = useState<'search' | 'analysis' | 'synthesis' | 'report' | 'full'>('full')
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string>()
   const [agentSteps, setAgentSteps] = useState<AgentStep[]>([])
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null)
+  const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false)
+
+  // Load workflow if ID is provided in URL
+  useEffect(() => {
+    if (workflowId) {
+      loadWorkflow(workflowId)
+    }
+  }, [workflowId])
+
+  const loadWorkflow = async (id: string) => {
+    setIsLoadingWorkflow(true)
+    setError(undefined)
+    
+    try {
+      const response = await fetch(`/api/v1/workflows/${id}`)
+      if (!response.ok) {
+        throw new Error('Failed to load workflow')
+      }
+      
+      const workflow = await response.json()
+      
+      // Set the workflow data
+      setQuery(workflow.query)
+      setResult({
+        plan: workflow.plan,
+        papers: workflow.papers,
+        analysis: workflow.analysis,
+        report: workflow.report,
+      })
+      setCurrentWorkflowId(workflow.id)
+      setChatSessionId(workflow.chatSessionId)
+      
+      // Show completed agent steps
+      const completedSteps: AgentStep[] = (workflow.agentsUsed || []).map((agent: string) => ({
+        agent: agent.toLowerCase() as AgentStep['agent'],
+        status: 'completed' as const,
+        message: 'Completed',
+        startTime: Date.now(),
+        endTime: Date.now(),
+      }))
+      setAgentSteps(completedSteps)
+      
+    } catch (err) {
+      console.error('Error loading workflow:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load workflow')
+    } finally {
+      setIsLoadingWorkflow(false)
+    }
+  }
 
   const updateAgentStatus = (agent: AgentStep['agent'], status: AgentStep['status'], message?: string) => {
     setAgentSteps(prev => {
@@ -36,6 +95,54 @@ export default function WorkflowsPage() {
       
       return updated
     })
+  }
+
+  const handleDownload = () => {
+    if (!result) return
+
+    const content = result.report || result.summary || JSON.stringify(result, null, 2)
+    const blob = new Blob([content], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `research-report-${query.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleSelectWorkflow = async (workflowId: string, workflowQuery: string) => {
+    setCurrentWorkflowId(workflowId)
+    setQuery(workflowQuery)
+    setShowHistory(false)
+    
+    // Load workflow details
+    try {
+      const response = await fetch(`/api/v1/workflows/${workflowId}`)
+      if (response.ok) {
+        const workflow = await response.json()
+        setResult(workflow)
+        setChatSessionId(workflow.chatSessionId)
+        
+        // Show completed agent steps
+        if (workflow.status === 'COMPLETED') {
+          setAgentSteps([
+            { agent: 'planner', status: 'completed' },
+            { agent: 'search', status: 'completed' },
+            { agent: 'synthesis', status: 'completed' },
+            { agent: 'report', status: 'completed' },
+          ])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load workflow:', error)
+    }
+  }
+
+  const handleStartChat = () => {
+    if (!result) return
+    setShowChat(true)
   }
 
   const handleExecute = async (e: React.FormEvent) => {
@@ -93,6 +200,10 @@ export default function WorkflowsPage() {
           if (line.startsWith('data: ')) {
             const data = JSON.parse(line.slice(6))
             
+            if (data.workflowId) {
+              setCurrentWorkflowId(data.workflowId)
+            }
+            
             if (data.type === 'status') {
               updateAgentStatus(data.agent, data.status, data.message)
               
@@ -109,6 +220,7 @@ export default function WorkflowsPage() {
               updateAgentStatus('synthesis', 'completed')
               updateAgentStatus('report', 'completed', 'Report generated successfully')
               setResult(data.result)
+              setChatSessionId(data.result?.chatSessionId || null)
             } else if (data.type === 'error') {
               throw new Error(data.error)
             }
@@ -149,6 +261,13 @@ export default function WorkflowsPage() {
             
             {/* Quick Actions */}
             <div className="flex gap-3">
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+              >
+                <History className="w-4 h-4" />
+                <span className="font-medium">History</span>
+              </button>
               <Link
                 href="/search"
                 className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
@@ -306,10 +425,22 @@ export default function WorkflowsPage() {
                     <FileText className="w-6 h-6 text-green-600" />
                     Generated Report
                   </h2>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <Download className="w-4 h-4" />
-                    <span>Download</span>
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleStartChat}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Chat</span>
+                    </button>
+                    <button 
+                      onClick={handleDownload}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl">
                   <MarkdownRenderer content={result.report || result.summary || JSON.stringify(result, null, 2)} />
@@ -318,6 +449,60 @@ export default function WorkflowsPage() {
             )}
           </div>
         </div>
+
+        {/* History Sidebar */}
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowHistory(false)}>
+            <div 
+              className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-gray-900">Workflow History</h2>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <WorkflowHistory
+                currentWorkflowId={currentWorkflowId}
+                onSelectWorkflow={handleSelectWorkflow}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Chat Modal */}
+        {showChat && chatSessionId && (
+          <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onClick={() => setShowChat(false)}>
+            <div 
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <MessageSquare className="w-6 h-6 text-blue-600" />
+                  Chat about Report
+                </h2>
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ChatInterface 
+                  sessionId={chatSessionId} 
+                  searchQuery={query}
+                  paperCount={result?.totalPapers || result?.metadata?.totalPapers || 0}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

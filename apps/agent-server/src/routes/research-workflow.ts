@@ -36,7 +36,7 @@ researchWorkflowRouter.post('/research', async (req, res, next) => {
     })
   } catch (error) {
     console.error('Workflow error:', error)
-    next(error)
+    return next(error)
   }
 })
 
@@ -73,6 +73,6 @@ researchWorkflowRouter.post('/literature-review', async (req, res, next) => {
     })
   } catch (error) {
     console.error('Literature review error:', error)
-    next(error)
+    return next(error)
   }
 })

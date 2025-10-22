@@ -22,7 +22,7 @@ app.use(cors({
 app.use(express.json())
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'agent-server', version: '0.1.0' })
 })
 
@@ -31,7 +31,7 @@ app.use('/api/workflows', researchWorkflowRouter)
 app.use('/api/agents', agentRouter)
 
 // Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Server error:', err)
   res.status(500).json({
     error: err.message || 'Internal server error',

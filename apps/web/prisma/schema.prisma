@@ -20,6 +20,7 @@ model User {
   
   projects      Project[]
   searches      Search[]
+  workflows     WorkflowExecution[]
   
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
@@ -144,6 +145,8 @@ model Search {
   
   totalResults    Int      @default(0) @map("total_results")
   
+  chatSession     ChatSession?
+  
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   startedAt       DateTime? @map("started_at")
@@ -156,6 +159,110 @@ model Search {
 
 enum SearchStatus {
   PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model ChatSession {
+  id              String   @id @default(uuid())
+  searchId        String   @unique @map("search_id")
+  search          Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String?  @db.Text
+  
+  paperIds        String[] @map("paper_ids")
+  paperCount      Int      @default(0) @map("paper_count")
+  
+  totalMessages   Int      @default(0) @map("total_messages")
+  lastMessageAt   DateTime? @map("last_message_at")
+  
+  messages        ChatMessage[]
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@index([searchId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id              String   @id @default(uuid())
+  sessionId       String   @map("session_id")
+  session         ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  role            MessageRole
+  content         String   @db.Text
+  
+  contextPapers   String[] @map("context_papers")
+  relevanceScores Json?    @map("relevance_scores")
+  
+  promptTokens    Int?     @map("prompt_tokens")
+  completionTokens Int?    @map("completion_tokens")
+  totalTokens     Int?     @map("total_tokens")
+  
+  metadata        Json?
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model WorkflowExecution {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  query           String
+  workflowType    WorkflowType @map("workflow_type")
+  
+  status          WorkflowStatus @default(RUNNING)
+  errorMessage    String?  @map("error_message") @db.Text
+  
+  // Results
+  plan            String?  @db.Text
+  papers          Json?
+  analysis        String?  @db.Text
+  report          String?  @db.Text
+  
+  // Metadata
+  agentsUsed      String[] @map("agents_used")
+  executionTimeMs Int?     @map("execution_time_ms")
+  totalPapers     Int      @default(0) @map("total_papers")
+  sources         String[]
+  
+  // Chat integration
+  chatSessionId   String?  @unique @map("chat_session_id")
+  paperIds        String[] @map("paper_ids")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  completedAt     DateTime? @map("completed_at")
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("workflow_executions")
+}
+
+enum WorkflowType {
+  SEARCH
+  ANALYSIS
+  SYNTHESIS
+  REPORT
+  FULL
+}
+
+enum WorkflowStatus {
   RUNNING
   COMPLETED
   FAILED

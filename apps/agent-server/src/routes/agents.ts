@@ -37,7 +37,7 @@ agentRouter.post('/planner', async (req, res, next) => {
     })
   } catch (error) {
     console.error('Planner error:', error)
-    next(error)
+    return next(error)
   }
 })
 
@@ -64,8 +64,8 @@ agentRouter.post('/search', async (req, res, next) => {
       agent: 'search',
     })
   } catch (error) {
-    console.error('Search error:', error)
-    next(error)
+    console.error('Researcher error:', error)
+    return next(error)
   }
 })
 
@@ -81,7 +81,7 @@ agentRouter.post('/synthesis', async (req, res, next) => {
       return res.status(400).json({ error: 'Prompt is required' })
     }
 
-    console.log('🔬 Synthesis agent:', prompt)
+    console.log(' Synthesis agent:', prompt)
 
     const { runner } = await createSynthesisAgent()
     const response = await runner.ask(prompt)
@@ -92,8 +92,8 @@ agentRouter.post('/synthesis', async (req, res, next) => {
       agent: 'synthesis',
     })
   } catch (error) {
-    console.error('Synthesis error:', error)
-    next(error)
+    console.error('Synthesizer error:', error)
+    return next(error)
   }
 })
 
@@ -109,7 +109,7 @@ agentRouter.post('/report', async (req, res, next) => {
       return res.status(400).json({ error: 'Prompt is required' })
     }
 
-    console.log('📄 Report agent:', prompt)
+    console.log(' Report agent:', prompt)
 
     const { runner } = await createReportAgent()
     const response = await runner.ask(prompt)
@@ -120,8 +120,8 @@ agentRouter.post('/report', async (req, res, next) => {
       agent: 'report',
     })
   } catch (error) {
-    console.error('Report error:', error)
-    next(error)
+    console.error('Reviewer error:', error)
+    return next(error)
   }
 })
 
@@ -149,6 +149,6 @@ agentRouter.post('/qa', async (req, res, next) => {
     })
   } catch (error) {
     console.error('Q&A error:', error)
-    next(error)
+    return next(error)
   }
 })

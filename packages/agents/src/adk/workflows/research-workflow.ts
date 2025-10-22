@@ -7,6 +7,7 @@ import { createPlannerAgent } from '../agents/planner'
 import { createSearchAgent } from '../agents/search'
 import { createSynthesisAgent } from '../agents/synthesis'
 import { createReportAgent } from '../agents/report'
+import { ArxivMCPServer, SemanticScholarMCPServer } from '@research-os/mcp-connectors'
 
 export interface ResearchWorkflowRequest {
   query: string
@@ -119,12 +120,81 @@ Return a structured list with:
 Deduplicate and rank by relevance.
     `
     
-    const searchResponseText = await searcher.ask(searchPrompt)
-    console.log('✅ Papers found')
-    console.log('Search response:', searchResponseText)
+    // Let the ADK-TS search agent analyze the query
+    const searchResponse = await searcher.ask(searchPrompt)
+    console.log('✅ Search agent analysis completed')
+    console.log('Search agent insights:', searchResponse.substring(0, 200) + '...')
     
-    // Parse papers from response (simplified)
-    papers = [] // Will be populated from searchResponseText
+    // Now fetch real papers using MCP connectors based on the agent's analysis
+    const allPapers: any[] = []
+    
+    // Fetch from arXiv
+    if (sources.includes('arxiv')) {
+      try {
+        console.log('📚 Fetching papers from arXiv via MCP...')
+        const arxiv = new ArxivMCPServer()
+        const arxivResults = await arxiv.search({
+          query: request.query,
+          max_results: Math.floor(maxPapers / sources.length),
+          start: 0,
+          sort_by: 'relevance',
+          sort_order: 'descending',
+        })
+        console.log(`✅ Found ${arxivResults.length} papers from arXiv`)
+        allPapers.push(...arxivResults)
+      } catch (error) {
+        console.error('❌ arXiv error:', error)
+      }
+    }
+    
+    // Fetch from Semantic Scholar
+    if (sources.includes('semantic_scholar')) {
+      try {
+        console.log('📚 Fetching papers from Semantic Scholar via MCP...')
+        const semanticScholar = new SemanticScholarMCPServer()
+        const ssResults = await semanticScholar.search({
+          query: request.query,
+          limit: Math.floor(maxPapers / sources.length),
+          offset: 0,
+          year: yearRange ? `${yearRange.from}-${yearRange.to}` : undefined,
+        })
+        console.log(`✅ Found ${ssResults.length} papers from Semantic Scholar`)
+        allPapers.push(...ssResults)
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        if (errorMsg.includes('429') || errorMsg.includes('Rate limit')) {
+          console.warn('⚠️  Semantic Scholar rate limit reached - continuing with arXiv papers only')
+        } else {
+          console.error('❌ Semantic Scholar error:', errorMsg)
+        }
+      }
+    }
+    
+    console.log(`📊 Total papers fetched from all sources: ${allPapers.length}`)
+    
+    // Transform papers to consistent format
+    papers = allPapers.map((paper) => ({
+      id: paper.arxiv_id || paper.id || `paper-${Date.now()}-${Math.random()}`,
+      title: paper.title,
+      abstract: paper.abstract || '',
+      authors: paper.authors || [],
+      year: paper.year || new Date().getFullYear(),
+      month: paper.month,
+      venue: paper.venue,
+      pdfUrl: paper.pdf_url,
+      htmlUrl: paper.html_url,
+      arxivId: paper.arxiv_id,
+      doi: paper.doi,
+      topics: paper.topics || [],
+      keywords: paper.keywords || [],
+      categories: paper.categories || [],
+      citations: paper.citationCount || 0,
+      source: paper.source || 'arxiv',
+      url: paper.pdf_url || paper.html_url || '',
+    }))
+    
+    console.log(`📄 Fetched ${papers.length} real papers from MCP connectors`)
+    console.log(`🤖 ADK-TS Search Agent provided strategic insights for the search`)
   }
   
   // Step 3: Analysis & Synthesis (if requested)
@@ -133,22 +203,30 @@ Deduplicate and rank by relevance.
     const { runner: synthesizer } = await createSynthesisAgent()
     agentsUsed.push('Synthesis')
     
+    // Prepare paper summaries for synthesis
+    const paperSummaries = papers.map((paper, idx) => `
+${idx + 1}. "${paper.title}" (${paper.year})
+   Authors: ${Array.isArray(paper.authors) ? paper.authors.join(', ') : 'N/A'}
+   Abstract: ${paper.abstract.substring(0, 300)}...
+   Venue: ${paper.venue || 'N/A'}
+`).join('\n')
+    
     const synthesisPrompt = `
 Analyze the research on: "${request.query}"
 
-${papers.length > 0 ? `Papers found: ${papers.length}` : 'Use your knowledge base'}
+${papers.length > 0 ? `Papers analyzed: ${papers.length}\n\n${paperSummaries}` : 'Use your knowledge base'}
 
 Provide:
-1. **Key Findings**: Main discoveries and contributions
-2. **Trends**: What's emerging vs declining
-3. **Methodologies**: Common approaches and techniques
-4. **Gaps**: What's missing or unexplored
-5. **Contradictions**: Debates or conflicting results
+1. **Key Findings**: Main discoveries and contributions from these papers
+2. **Trends**: What's emerging vs declining based on the papers
+3. **Methodologies**: Common approaches and techniques used
+4. **Gaps**: What's missing or unexplored in this research
+5. **Contradictions**: Debates or conflicting results between papers
 
 ${options.includeTrends ? 'Focus heavily on recent trends and future directions.' : ''}
 ${options.includeCode ? 'Highlight papers with open-source implementations.' : ''}
 
-Be specific and cite evidence.
+Be specific and cite evidence from the papers above.
     `
     
     analysis = await synthesizer.ask(synthesisPrompt)

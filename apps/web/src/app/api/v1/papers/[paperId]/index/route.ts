@@ -98,6 +98,54 @@ export async function POST(
 
     console.log(`Indexed ${chunksWithMetadata.length} chunks in Weaviate`)
 
+    // Get the searchId from request body (if provided)
+    const body = await request.json().catch(() => ({}))
+    const searchId = body.searchId
+
+    // Auto-create or update chat session if searchId is provided
+    if (searchId) {
+      try {
+        // Check if chat session exists
+        const existingSession = await prisma.chatSession.findUnique({
+          where: { searchId },
+        })
+
+        if (existingSession) {
+          // Update existing session with new paper
+          const updatedPaperIds = Array.from(new Set([...existingSession.paperIds, paper.id]))
+          await prisma.chatSession.update({
+            where: { id: existingSession.id },
+            data: {
+              paperIds: updatedPaperIds,
+              paperCount: updatedPaperIds.length,
+            },
+          })
+          console.log(`Updated chat session ${existingSession.id} with paper ${paper.id}`)
+        } else {
+          // Create new chat session
+          const search = await prisma.search.findUnique({
+            where: { id: searchId },
+          })
+
+          if (search) {
+            await prisma.chatSession.create({
+              data: {
+                searchId,
+                title: `Chat: ${search.query}`,
+                description: `Ask questions about papers from your search`,
+                paperIds: [paper.id],
+                paperCount: 1,
+              },
+            })
+            console.log(`Created chat session for search ${searchId}`)
+          }
+        }
+      } catch (error) {
+        console.error('Error creating/updating chat session:', error)
+        // Don't fail the indexing if chat session creation fails
+      }
+    }
+
     return NextResponse.json({
       message: 'Paper indexed successfully',
       paperId: paper.id,
