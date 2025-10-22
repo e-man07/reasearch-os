@@ -1,0 +1,86 @@
+/**
+ * ADK-TS Tools that wrap MCP connectors
+ */
+
+import { createTool } from '@iqai/adk'
+import { z } from 'zod'
+import { ArxivMCPServer, SemanticScholarMCPServer } from '@research-os/mcp-connectors'
+
+/**
+ * Tool for searching arXiv papers
+ */
+export const searchArxivTool = createTool({
+  name: 'search_arxiv',
+  description: 'Search for research papers on arXiv. Returns papers with titles, abstracts, authors, and metadata.',
+  schema: z.object({
+    query: z.string().describe('Search query for papers (e.g., "attention mechanisms in transformers")'),
+    max_results: z.number().optional().default(10).describe('Maximum number of results to return (default: 10, max: 50)'),
+  }),
+  fn: async ({ query, max_results }) => {
+    const arxiv = new ArxivMCPServer()
+    
+    // Call the public search method through the MCP server interface
+    const response = await arxiv.callTool('search_papers', {
+      query,
+      max_results: max_results || 10,
+      start: 0,
+      sort_by: 'relevance',
+      sort_order: 'descending',
+    })
+    
+    return {
+      papers: response.papers || [],
+      count: response.papers?.length || 0,
+    }
+  },
+})
+
+/**
+ * Tool for searching Semantic Scholar
+ */
+export const searchSemanticScholarTool = createTool({
+  name: 'search_semantic_scholar',
+  description: 'Search for research papers on Semantic Scholar. Returns papers with citations, references, and influence metrics.',
+  schema: z.object({
+    query: z.string().describe('Search query for papers'),
+    limit: z.number().optional().default(10).describe('Maximum number of results (default: 10)'),
+    year: z.string().optional().describe('Year range filter (e.g., "2020-2024")'),
+  }),
+  fn: async ({ query, limit, year }) => {
+    const ss = new SemanticScholarMCPServer()
+    
+    // Call the public search method through the MCP server interface
+    const response = await ss.callTool('search_papers', {
+      query,
+      limit: limit || 10,
+      offset: 0,
+      year,
+    })
+    
+    return {
+      papers: response.papers || [],
+      count: response.papers?.length || 0,
+    }
+  },
+})
+
+/**
+ * Tool for RAG-based retrieval from vector store
+ */
+export const retrieveSimilarTool = createTool({
+  name: 'retrieve_similar',
+  description: 'Retrieve similar content from indexed papers using semantic search in the vector database.',
+  schema: z.object({
+    query: z.string().describe('Query to search for similar content'),
+    limit: z.number().optional().default(5).describe('Number of results to return (default: 5)'),
+  }),
+  fn: async ({ query, limit }) => {
+    // This will be implemented with actual Weaviate integration
+    return {
+      chunks: [],
+      message: 'RAG retrieval tool - to be implemented with Weaviate',
+      query,
+      limit: limit || 5,
+    }
+  },
+})
