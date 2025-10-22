@@ -23,8 +23,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky install"
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "keywords": [
     "research",
@@ -44,21 +43,10 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
     "prettier": "^3.1.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^1.1.0"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
   },
   "dependencies": {
     "@iqai/adk": "^0.5.0"
