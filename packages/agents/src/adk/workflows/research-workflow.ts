@@ -3,10 +3,10 @@
  * Flexible multi-agent workflow for ANY research query
  */
 
-import { createPlannerAgent } from '../agents/planner'
-import { createSearchAgent } from '../agents/search'
-import { createSynthesisAgent } from '../agents/synthesis'
-import { createReportAgent } from '../agents/report'
+import { createPlannerAgent } from '../agents/planner.js'
+import { createSearchAgent } from '../agents/search.js'
+import { createSynthesisAgent } from '../agents/synthesis.js'
+import { createReportAgent } from '../agents/report.js'
 import { ArxivMCPServer, SemanticScholarMCPServer } from '@research-os/mcp-connectors'
 
 export interface ResearchWorkflowRequest {

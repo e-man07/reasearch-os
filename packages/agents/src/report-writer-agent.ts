@@ -2,7 +2,7 @@
  * Report writer agent - generates comprehensive research reports
  */
 
-import { BaseAgent } from './base-agent'
+import { BaseAgent } from './base-agent.js'
 import type { CreatePaper } from '@research-os/core'
 
 export interface ReportInput {

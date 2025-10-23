@@ -6,8 +6,16 @@ import { Sparkles, Loader2, FileText, Download, Search as SearchIcon, MessageSqu
 import { AgentProgress, type AgentStep } from '@/components/workflows/AgentProgress'
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer'
 import WorkflowHistory from '@/components/workflows/WorkflowHistory'
-import ChatInterface from '@/components/chat/ChatInterface'
+import { ChatModal } from '@/components/chat/ChatModal'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+// Opt out of static generation due to useSearchParams
+export const dynamic = 'force-dynamic'
 
 export default function WorkflowsPage() {
   const searchParams = useSearchParams()
@@ -245,42 +253,42 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <header className="border-b border-border bg-card sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                ✨ AI Workflows
+              <h1 className="text-3xl font-semibold text-foreground mb-1">
+                AI Workflows
               </h1>
-              <p className="text-gray-600">
-                Multi-agent research workflows • Powered by ADK-TS
+              <p className="text-sm text-muted-foreground">
+                Multi-agent research workflows
               </p>
             </div>
-            
+
             {/* Quick Actions */}
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-2">
+              <Button
                 onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                variant="outline"
+                size="sm"
+                className="gap-2"
               >
                 <History className="w-4 h-4" />
-                <span className="font-medium">History</span>
-              </button>
-              <Link
-                href="/search"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-              >
-                <SearchIcon className="w-4 h-4" />
-                <span className="font-medium">Search Papers</span>
+                History
+              </Button>
+              <Link href="/search">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <SearchIcon className="w-4 h-4" />
+                  Search
+                </Button>
               </Link>
-              <Link
-                href="/rag"
-                className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span className="font-medium">Ask Questions</span>
+              <Link href="/rag">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Q&A
+                </Button>
               </Link>
             </div>
           </div>
@@ -288,183 +296,204 @@ export default function WorkflowsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left Column - Form */}
-          <div className="space-y-6">
-            {/* Workflow Form */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-purple-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-                Configure Workflow
-              </h2>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        {/* Form and Help - Two Column Layout */}
+        <div className={result ? "mb-8" : ""}>
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Left Column - Form */}
+            <div>
+              {/* Workflow Form */}
+              <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-muted-foreground" />
+                  Configure Workflow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleExecute} className="space-y-6">
+                  {/* Query */}
+                  <div className="space-y-2">
+                    <Label htmlFor="query">Research Query *</Label>
+                    <Input
+                      id="query"
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="e.g., attention mechanisms in transformers"
+                      disabled={isRunning}
+                      required
+                    />
+                  </div>
 
-              <form onSubmit={handleExecute} className="space-y-6">
-                {/* Query */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Research Query *
-                  </label>
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g., attention mechanisms in transformers"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 focus:outline-none transition-all"
-                    disabled={isRunning}
-                    required
-                  />
-                </div>
+                  {/* Workflow Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="workflowType">Workflow Type</Label>
+                    <Select
+                      value={workflowType}
+                      onValueChange={(value) => setWorkflowType(value as any)}
+                      disabled={isRunning}
+                    >
+                      <SelectTrigger id="workflowType">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="search">Search Only</SelectItem>
+                        <SelectItem value="analysis">Analysis Only</SelectItem>
+                        <SelectItem value="synthesis">Synthesis</SelectItem>
+                        <SelectItem value="report">Report Generation</SelectItem>
+                        <SelectItem value="full">Full Workflow</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Workflow Type */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Workflow Type
-                  </label>
-                  <select
-                    value={workflowType}
-                    onChange={(e) => setWorkflowType(e.target.value as any)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 focus:outline-none transition-all"
-                    disabled={isRunning}
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    disabled={isRunning || !query.trim()}
+                    className="w-full gap-2"
                   >
-                    <option value="search">🔍 Search Only</option>
-                    <option value="analysis">📊 Analysis Only</option>
-                    <option value="synthesis">💡 Synthesis</option>
-                    <option value="report">📄 Report Generation</option>
-                    <option value="full">🚀 Full Workflow</option>
-                  </select>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isRunning || !query.trim()}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl disabled:shadow-none flex items-center justify-center gap-2"
-                >
-                  {isRunning ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Running Workflow...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      <span>Execute Workflow</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Help */}
-            {!result && !isRunning && (
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6">
-                <h3 className="text-lg font-bold text-purple-900 mb-3 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  How It Works
-                </h3>
-                <div className="space-y-3 text-sm text-purple-800">
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-6 h-6 bg-purple-200 rounded-full text-purple-900 font-bold text-xs">1</div>
-                    <div>
-                      <p className="font-semibold">Planner Agent</p>
-                      <p className="text-purple-700">Analyzes query and creates strategy</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-6 h-6 bg-purple-200 rounded-full text-purple-900 font-bold text-xs">2</div>
-                    <div>
-                      <p className="font-semibold">Search Agent</p>
-                      <p className="text-purple-700">Finds papers via MCP connectors</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-6 h-6 bg-purple-200 rounded-full text-purple-900 font-bold text-xs">3</div>
-                    <div>
-                      <p className="font-semibold">Synthesis Agent</p>
-                      <p className="text-purple-700">Analyzes and identifies patterns</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-6 h-6 bg-purple-200 rounded-full text-purple-900 font-bold text-xs">4</div>
-                    <div>
-                      <p className="font-semibold">Report Agent</p>
-                      <p className="text-purple-700">Generates comprehensive report</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                    {isRunning ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Running Workflow...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        <span>Execute Workflow</span>
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Column - Progress & Results */}
+          {/* Right Column - Help / Progress & Results */}
           <div className="space-y-6">
+            {/* Help - Show when no workflow is running */}
+            {!result && !isRunning && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-muted-foreground" />
+                    How It Works
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center min-w-[32px] w-8 h-8 bg-muted rounded-full text-foreground font-bold text-sm">1</div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">Planner Agent</p>
+                      <p className="text-sm text-muted-foreground">Analyzes query and creates strategy</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center min-w-[32px] w-8 h-8 bg-muted rounded-full text-foreground font-bold text-sm">2</div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">Search Agent</p>
+                      <p className="text-sm text-muted-foreground">Finds papers via MCP connectors</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center min-w-[32px] w-8 h-8 bg-muted rounded-full text-foreground font-bold text-sm">3</div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">Synthesis Agent</p>
+                      <p className="text-sm text-muted-foreground">Analyzes and identifies patterns</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center justify-center min-w-[32px] w-8 h-8 bg-muted rounded-full text-foreground font-bold text-sm">4</div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">Report Agent</p>
+                      <p className="text-sm text-muted-foreground">Generates comprehensive report</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Agent Progress */}
             {agentSteps.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-purple-100">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Agent Progress
-                </h2>
-                <AgentProgress steps={agentSteps} />
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Agent Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AgentProgress steps={agentSteps} />
+                </CardContent>
+              </Card>
             )}
 
             {/* Error */}
             {error && (
-              <div className="p-6 bg-red-50 border-2 border-red-200 rounded-2xl text-red-700">
-                <p className="font-semibold mb-1">❌ Error</p>
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Result */}
-            {result && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-green-100 animate-in fade-in duration-500">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-6 h-6 text-green-600" />
-                    Generated Report
-                  </h2>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={handleStartChat}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Chat</span>
-                    </button>
-                    <button 
-                      onClick={handleDownload}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl">
-                  <MarkdownRenderer content={result.report || result.summary || JSON.stringify(result, null, 2)} />
-                </div>
-              </div>
+              <Card className="border-destructive">
+                <CardContent className="pt-6">
+                  <p className="font-semibold text-foreground mb-1">Error</p>
+                  <p className="text-sm text-muted-foreground">{error}</p>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
+        </div>
+
+        {/* Result - Full Width */}
+        {result && (
+          <Card className="animate-in fade-in duration-500">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  Generated Report
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleStartChat}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Chat
+                  </Button>
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted p-6 rounded-lg">
+                <MarkdownRenderer content={result.report || result.summary || JSON.stringify(result, null, 2)} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* History Sidebar */}
         {showHistory && (
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowHistory(false)}>
-            <div 
-              className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 overflow-y-auto"
+            <div
+              className="fixed right-0 top-0 h-full w-96 bg-card border-l border-border shadow-2xl z-50 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-900">Workflow History</h2>
-                <button
+              <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Workflow History</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowHistory(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="h-8 w-8"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
               <WorkflowHistory
                 currentWorkflowId={currentWorkflowId}
@@ -475,33 +504,14 @@ export default function WorkflowsPage() {
         )}
 
         {/* Chat Modal */}
-        {showChat && chatSessionId && (
-          <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onClick={() => setShowChat(false)}>
-            <div 
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <MessageSquare className="w-6 h-6 text-blue-600" />
-                  Chat about Report
-                </h2>
-                <button
-                  onClick={() => setShowChat(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <ChatInterface 
-                  sessionId={chatSessionId} 
-                  searchQuery={query}
-                  paperCount={result?.totalPapers || result?.metadata?.totalPapers || 0}
-                />
-              </div>
-            </div>
-          </div>
+        {chatSessionId && (
+          <ChatModal
+            isOpen={showChat}
+            onClose={() => setShowChat(false)}
+            sessionId={chatSessionId}
+            searchQuery={query}
+            paperCount={result?.totalPapers || result?.metadata?.totalPapers || 0}
+          />
         )}
       </main>
     </div>

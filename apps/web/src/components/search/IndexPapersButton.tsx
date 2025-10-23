@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Loader2, MessageSquare, CheckCircle2 } from 'lucide-react'
 import { indexPapersWithChat } from '@/lib/chat-utils'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 
 interface IndexPapersButtonProps {
   paperIds: string[]
@@ -49,7 +51,7 @@ export default function IndexPapersButton({
 
   if (isComplete) {
     return (
-      <div className="flex items-center gap-2 text-green-600">
+      <div className="flex items-center gap-2 text-foreground">
         <CheckCircle2 className="w-5 h-5" />
         <span className="text-sm font-medium">
           Chat ready! {progress.indexed} papers indexed
@@ -60,39 +62,32 @@ export default function IndexPapersButton({
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         onClick={handleIndex}
         disabled={isIndexing || paperIds.length === 0}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isIndexing ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>
-              Indexing... {progress.indexed}/{progress.total}
-            </span>
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            Indexing... {progress.indexed}/{progress.total}
           </>
         ) : (
           <>
-            <MessageSquare className="w-4 h-4" />
-            <span>Index Papers & Start Chat</span>
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Index Papers & Start Chat
           </>
         )}
-      </button>
+      </Button>
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {isIndexing && (
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            style={{
-              width: `${(progress.indexed / progress.total) * 100}%`,
-            }}
-          />
-        </div>
+        <Progress
+          value={(progress.indexed / progress.total) * 100}
+          className="w-full"
+        />
       )}
     </div>
   )

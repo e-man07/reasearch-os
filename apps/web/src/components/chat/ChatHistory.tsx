@@ -93,14 +93,14 @@ export default function ChatHistory({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-4 text-center text-red-600 text-sm">
+      <div className="p-4 text-center text-destructive text-sm">
         {error}
       </div>
     )
@@ -108,8 +108,8 @@ export default function ChatHistory({
 
   if (sessions.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500">
-        <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+      <div className="p-4 text-center text-muted-foreground">
+        <MessageSquare className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
         <p className="text-sm">No chat history yet</p>
         <p className="text-xs mt-1">Start by searching and indexing papers</p>
       </div>
@@ -118,12 +118,12 @@ export default function ChatHistory({
 
   return (
     <div className="space-y-2">
-      <div className="px-4 py-2 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+      <div className="px-4 py-2 border-b border-border">
+        <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Chat History
         </h3>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {sessions.length} session{sessions.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -133,29 +133,29 @@ export default function ChatHistory({
           <button
             key={session.id}
             onClick={() => onSelectSession(session.id, session.searchId, session.title)}
-            className={`w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-4 ${
+            className={`w-full text-left p-4 hover:bg-accent transition-colors border-l-4 ${
               currentSessionId === session.id
-                ? 'border-l-blue-600 bg-blue-50'
+                ? 'border-l-foreground bg-accent'
                 : 'border-l-transparent'
             }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-gray-900 truncate text-sm">
+                <h4 className="font-medium text-foreground truncate text-sm">
                   {session.title.replace('Chat: ', '')}
                 </h4>
-                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   <span>{session.paperCount} papers</span>
                   <span>•</span>
                   <span>{session.totalMessages} messages</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {formatDate(session.lastMessageAt || session.createdAt)}
                 </p>
               </div>
               <button
                 onClick={(e) => deleteSession(session.id, e)}
-                className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-600 transition-colors"
+                className="p-1 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive transition-colors"
                 title="Delete session"
               >
                 <Trash2 className="w-4 h-4" />

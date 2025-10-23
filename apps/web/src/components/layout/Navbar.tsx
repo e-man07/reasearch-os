@@ -1,88 +1,100 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Search, User, LogOut, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react'
+import { Search, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
 
 export function Navbar() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
+
+  const isActive = (path: string) => pathname === path
+
+  const navItems = [
+    { href: '/search', label: 'Search', icon: Search },
+    { href: '/workflows', label: 'Workflows', icon: Sparkles },
+    { href: '/rag', label: 'Q&A', icon: MessageSquare },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  ]
 
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4">
+    <nav className="border-b border-border bg-card">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Research<span className="text-blue-600">OS</span>
+            <h1 className="text-xl font-bold text-foreground">
+              ResearchOS
             </h1>
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-1">
             {status === 'authenticated' ? (
               <>
-                <Link
-                  href="/search"
-                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                  <span className="font-medium">Search</span>
-                </Link>
+                {navItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                        isActive(item.href)
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  )
+                })}
 
-                <Link
-                  href="/workflows"
-                  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 transition-colors"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  <span className="font-medium">Workflows</span>
-                </Link>
-
-                <Link
-                  href="/rag"
-                  className="flex items-center gap-2 text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="font-medium">Q&A</span>
-                </Link>
-
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  <LayoutDashboard className="w-5 h-5" />
-                  <span className="font-medium">Dashboard</span>
-                </Link>
-
-                {/* User Menu */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <User className="w-5 h-5" />
-                    <span className="text-sm font-medium">{session.user?.name}</span>
-                  </div>
-
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-red-600 transition-colors"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    <span className="font-medium">Sign Out</span>
-                  </button>
-                </div>
+                {/* User Dropdown Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="ml-2 gap-2">
+                      <Avatar className="w-7 h-7">
+                        <AvatarFallback className="text-xs">
+                          {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{session.user?.name}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/auth/signin"
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
-                >
-                  Sign In
+              <div className="flex items-center gap-3">
+                <Link href="/auth/signin">
+                  <Button variant="ghost">
+                    Sign In
+                  </Button>
                 </Link>
-                <Link
-                  href="/auth/register"
-                  className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Get Started
+                <Link href="/auth/register">
+                  <Button>
+                    Get Started
+                  </Button>
                 </Link>
               </div>
             )}

@@ -85,33 +85,33 @@ export default function WorkflowHistory({ currentWorkflowId, onSelectWorkflow }:
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="w-4 h-4 text-foreground" />
       case 'FAILED':
-        return <XCircle className="w-4 h-4 text-red-600" />
+        return <XCircle className="w-4 h-4 text-destructive" />
       case 'RUNNING':
-        return <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+        return <Loader2 className="w-4 h-4 text-foreground animate-spin" />
       default:
-        return <Clock className="w-4 h-4 text-gray-400" />
+        return <Clock className="w-4 h-4 text-muted-foreground" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return 'bg-green-50 border-green-200'
+        return 'bg-accent border-border'
       case 'FAILED':
-        return 'bg-red-50 border-red-200'
+        return 'bg-destructive/10 border-destructive/20'
       case 'RUNNING':
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-accent border-border'
       default:
-        return 'bg-gray-50 border-gray-200'
+        return 'bg-muted border-border'
     }
   }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -119,11 +119,11 @@ export default function WorkflowHistory({ currentWorkflowId, onSelectWorkflow }:
   if (workflows.length === 0) {
     return (
       <div className="p-8 text-center">
-        <div className="text-gray-400 mb-2">
+        <div className="text-muted-foreground mb-2">
           <Clock className="w-12 h-12 mx-auto mb-3" />
         </div>
-        <p className="text-gray-600 font-medium">No workflow history yet</p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-foreground font-medium">No workflow history yet</p>
+        <p className="text-sm text-muted-foreground mt-1">
           Your executed workflows will appear here
         </p>
       </div>
@@ -131,24 +131,24 @@ export default function WorkflowHistory({ currentWorkflowId, onSelectWorkflow }:
   }
 
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-border">
       {workflows.map((workflow) => (
         <div
           key={workflow.id}
           onClick={() => onSelectWorkflow(workflow.id, workflow.query)}
-          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-            currentWorkflowId === workflow.id ? 'bg-purple-50 border-l-4 border-l-purple-600' : ''
+          className={`p-4 hover:bg-accent cursor-pointer transition-colors ${
+            currentWorkflowId === workflow.id ? 'bg-accent border-l-4 border-l-foreground' : ''
           }`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               {/* Query */}
-              <h3 className="font-medium text-gray-900 truncate mb-1">
+              <h3 className="font-medium text-foreground truncate mb-1">
                 {workflow.query}
               </h3>
 
               {/* Metadata */}
-              <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
                 <span className="flex items-center gap-1">
                   {getStatusIcon(workflow.status)}
                   {workflow.status.toLowerCase()}
@@ -168,7 +168,7 @@ export default function WorkflowHistory({ currentWorkflowId, onSelectWorkflow }:
                   {workflow.workflowType}
                 </span>
                 {workflow.chatSessionId && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-accent text-foreground rounded text-xs font-medium border border-border">
                     <MessageSquare className="w-3 h-3" />
                     Chat
                   </span>
@@ -180,7 +180,7 @@ export default function WorkflowHistory({ currentWorkflowId, onSelectWorkflow }:
             <button
               onClick={(e) => handleDelete(workflow.id, e)}
               disabled={deletingId === workflow.id}
-              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors disabled:opacity-50"
               title="Delete workflow"
             >
               {deletingId === workflow.id ? (

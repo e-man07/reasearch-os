@@ -1,6 +1,7 @@
 'use client'
 
 import { Check, Loader2, Brain, Search, Lightbulb, FileText } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export interface AgentStep {
   agent: 'planner' | 'search' | 'synthesis' | 'report'
@@ -49,89 +50,70 @@ export function AgentProgress({ steps }: AgentProgressProps) {
         const Icon = config.icon
         const isLast = index === steps.length - 1
 
-        const getStatusColor = () => {
-          switch (step.status) {
-            case 'completed':
-              return 'bg-green-500'
-            case 'running':
-              return 'bg-blue-500'
-            case 'error':
-              return 'bg-red-500'
-            default:
-              return 'bg-gray-300'
-          }
-        }
-
-        const getTextColor = () => {
-          switch (step.status) {
-            case 'completed':
-              return 'text-green-700'
-            case 'running':
-              return 'text-blue-700'
-            case 'error':
-              return 'text-red-700'
-            default:
-              return 'text-gray-500'
-          }
-        }
-
-        const duration = step.startTime && step.endTime 
-          ? ((step.endTime - step.startTime) / 1000).toFixed(1) 
+        const duration = step.startTime && step.endTime
+          ? ((step.endTime - step.startTime) / 1000).toFixed(1)
           : null
 
         return (
           <div key={step.agent} className="relative">
             {/* Connecting Line */}
             {!isLast && (
-              <div 
-                className={`absolute left-6 top-14 w-0.5 h-8 ${
-                  step.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'
-                }`}
+              <div
+                className={cn(
+                  'absolute left-6 top-14 w-0.5 h-8',
+                  step.status === 'completed' ? 'bg-foreground' : 'bg-border'
+                )}
               />
             )}
 
             {/* Agent Card */}
-            <div className={`flex items-start gap-4 p-6 rounded-xl border-2 transition-all ${
-              step.status === 'running' 
-                ? 'border-blue-400 bg-blue-50 shadow-lg scale-105' 
-                : step.status === 'completed'
-                ? 'border-green-300 bg-green-50'
-                : step.status === 'error'
-                ? 'border-red-300 bg-red-50'
-                : 'border-gray-200 bg-gray-50'
-            }`}>
+            <div className={cn(
+              'flex items-start gap-4 p-4 rounded-lg border transition-all',
+              step.status === 'running' && 'border-foreground bg-accent shadow-sm',
+              step.status === 'completed' && 'border-border bg-card',
+              step.status === 'error' && 'border-destructive bg-card',
+              step.status === 'pending' && 'border-border bg-card opacity-50'
+            )}>
               {/* Icon */}
-              <div className={`flex items-center justify-center w-12 h-12 rounded-full ${getStatusColor()} transition-all`}>
+              <div className={cn(
+                'flex items-center justify-center w-12 h-12 rounded-full transition-all',
+                step.status === 'completed' && 'bg-foreground',
+                step.status === 'running' && 'bg-foreground',
+                step.status === 'error' && 'bg-destructive',
+                step.status === 'pending' && 'bg-muted'
+              )}>
                 {step.status === 'completed' ? (
-                  <Check className="w-6 h-6 text-white" />
+                  <Check className="w-6 h-6 text-background" />
                 ) : step.status === 'running' ? (
-                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  <Loader2 className="w-6 h-6 text-background animate-spin" />
+                ) : step.status === 'error' ? (
+                  <Icon className="w-6 h-6 text-destructive-foreground" />
                 ) : (
-                  <Icon className="w-6 h-6 text-white opacity-50" />
+                  <Icon className="w-6 h-6 text-muted-foreground" />
                 )}
               </div>
 
               {/* Content */}
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className={`text-lg font-bold ${getTextColor()}`}>
+                  <h3 className="text-base font-semibold text-foreground">
                     {config.name}
                   </h3>
                   {duration && (
-                    <span className="text-xs text-gray-500 font-mono">
+                    <span className="text-xs text-muted-foreground font-mono">
                       {duration}s
                     </span>
                   )}
                 </div>
-                
-                <p className="text-sm text-gray-600 mb-2">
+
+                <p className="text-sm text-muted-foreground mb-2">
                   {step.message || config.description}
                 </p>
 
                 {/* Progress Bar for Running */}
                 {step.status === 'running' && (
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 animate-pulse" style={{ width: '60%' }} />
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-foreground animate-pulse" style={{ width: '60%' }} />
                   </div>
                 )}
               </div>
