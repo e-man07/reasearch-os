@@ -2,7 +2,7 @@
  * Synthesis agent - synthesizes information from multiple papers
  */
 
-import { BaseAgent } from './base-agent.js'
+import { BaseAgent } from './base-agent'
 import type { CreatePaper } from '@research-os/core'
 
 export interface SynthesisInput {

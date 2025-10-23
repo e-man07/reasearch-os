@@ -2,10 +2,10 @@
  * Orchestrator agent - coordinates multiple agents
  */
 
-import { BaseAgent } from './base-agent.js'
-import { SearchAgent } from './search-agent.js'
-import { SynthesisAgent } from './synthesis-agent.js'
-import { ReportWriterAgent } from './report-writer-agent.js'
+import { BaseAgent } from './base-agent'
+import { SearchAgent } from './search-agent'
+import { SynthesisAgent } from './synthesis-agent'
+import { ReportWriterAgent } from './report-writer-agent'
 import type { CreatePaper } from '@research-os/core'
 
 export interface OrchestrationInput {

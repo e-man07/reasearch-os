@@ -4,6 +4,6 @@
  */
 
 // Export ADK-TS agents and workflows
-export * from './adk/index.js'
+export * from './adk/index'
 
 export const VERSION = '0.1.0'

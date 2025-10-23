@@ -2,7 +2,7 @@
  * Search agent - orchestrates paper search
  */
 
-import { BaseAgent } from './base-agent.js'
+import { BaseAgent } from './base-agent'
 import type { CreatePaper } from '@research-os/core'
 
 export interface SearchInput {

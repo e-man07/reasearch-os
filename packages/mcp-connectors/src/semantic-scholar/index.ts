@@ -2,6 +2,6 @@
  * Semantic Scholar MCP connector
  */
 
-export * from './server.js'
-export * from './types.js'
-export * from './normalizer.js'
+export * from './server'
+export * from './types'
+export * from './normalizer'
